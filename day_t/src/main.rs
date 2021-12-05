@@ -1,7 +1,7 @@
 use std::fs;
 use std::time::Instant;
 
-type Generated = Vec<Vec<Operation>>;
+type Generated = Vec<i32>;
 
 fn generate(input: &str) -> Generated {
     input
@@ -13,13 +13,12 @@ fn generate(input: &str) -> Generated {
 }
 
 fn part_1(input: &Generated) -> i32 {
-    input.iter().fold(0, |acc, fuel| acc + (fuel/3)-2)
+0
 }
 
 
 fn part_2(input: &Generated) -> i32 {
-   input.iter()
-        .fold(0, |acc, &mass| acc + compute_required_fuel(mass))
+0
 }
 
 fn main() {
@@ -44,10 +43,10 @@ mod tests {
     use super::*;
     #[test]
     fn test_part_1() {
-
+        assert_eq!(0, part_1(&generate("")));
     }
     #[test]
     fn test_part_2() {
-
+        assert_eq!(0, part_2(&generate("")));
     }
 }
