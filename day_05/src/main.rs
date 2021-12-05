@@ -95,8 +95,7 @@ fn part_1(input: &Generated) -> usize {
         .map(|t| TranslationWalker::from_translation(t))
         .for_each(|walker| {
             walker.into_iter().for_each(|step| {
-                let val = map.entry(step).or_insert(0);
-                *val += 1
+                *map.entry(step).or_insert(0) += 1
             })
         });
 
