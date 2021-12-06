@@ -1,0 +1,8 @@
+[package]
+name = "day"
+version = "0.1.0"
+authors = ["Wojciech Strozynski <strozynskiw@gmail.com>"]
+edition = "2021"
+
+[dependencies]
+ringbuf = "0.2.6"
