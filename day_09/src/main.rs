@@ -1,14 +1,20 @@
 use std::fs;
 use std::time::Instant;
 
-type Generated = Vec<Vec<i32>>;
+type Generated = Vec<Vec<Cell>>;
+
+#[derive(PartialEq, PartialOrd, Clone, Copy)]
+enum Cell {
+    Flooded,
+    Dry(i32),
+}
 
 fn generate(input: &str) -> Generated {
     input
         .lines()
         .map(|l| l.trim())
         .filter(|l| !l.is_empty())
-        .map(|l| l.chars().map(|c| c as i32 - 48).collect())
+        .map(|l| l.chars().map(|c| Cell::Dry(c as i32 - 48)).collect())
         .collect()
 }
 
@@ -16,7 +22,7 @@ fn get_minimas(input: &Generated) -> Vec<(usize, usize)> {
     let mut minimas: Vec<(usize, usize)> = Vec::new();
     for x in 0..input[0].len() as i32 {
         for y in 0..input.len() as i32 {
-            let mut points: Vec<i32> = Vec::new();
+            let mut points: Vec<Cell> = Vec::new();
             let val = input[y as usize][x as usize];
 
             if x - 1 >= 0 {
@@ -32,7 +38,7 @@ fn get_minimas(input: &Generated) -> Vec<(usize, usize)> {
                 points.push(input[y as usize + 1][x as usize]);
             }
 
-            if points.iter().any(|&p| p <= val) {
+            if points.iter().any(|p| p <= &val) {
                 continue;
             } else {
                 minimas.push((y as usize, x as usize));
@@ -45,75 +51,40 @@ fn get_minimas(input: &Generated) -> Vec<(usize, usize)> {
 fn part_1(input: &Generated) -> i32 {
     let minimas = get_minimas(input);
 
-    minimas.iter().map(|m| input[m.0][m.1] + 1).sum()
+    minimas.iter().map(|m| match input[m.0][m.1] {
+        Cell::Dry(v) => v,
+        _ => 0,
+        } + 1).sum()
 }
 
-#[derive(PartialEq)]
-enum Cell {
-    Edge,
-    Flooded,
-    Dry(u8),
-}
-
-fn find_edge(board: &Vec<Vec<Cell>>) -> Option<(usize, usize)> {
-    for x in 0..board[0].len() {
-        for y in 0..board.len() {
-            if board[y][x] == Cell::Edge {
-                return Some((y, x));
+fn flood_fill(input: &mut Generated, start: &(usize, usize)) -> usize {
+    match input[start.0][start.1] {
+        Cell::Dry(v) if v != 9 => {
+            input[start.0][start.1] = Cell::Flooded;
+            let mut result = 1;
+            if start.0 as i32 - 1 >= 0 {
+                result += flood_fill(input, &(start.0 - 1, start.1));
             }
-        }
+            if start.0 + 1 < input.len() {
+                result += flood_fill(input, &(start.0 + 1, start.1));
+            }
+            if start.1 as i32 - 1 >= 0 {
+                result += flood_fill(input, &(start.0, start.1 - 1));
+            }
+            if start.1 + 1 < input[0].len() {
+                result += flood_fill(input, &(start.0, start.1 + 1));
+            }
+            result
+        },
+        _ => 0,
     }
-    None
-}
-
-fn flood_fill(input: &Generated, start: &(usize, usize)) -> usize {
-    let mut board: Vec<Vec<Cell>> = input
-        .iter()
-        .map(|row| row.iter().map(|i| Cell::Dry(*i as u8)).collect())
-        .collect();
-
-    board[start.0][start.1] = Cell::Edge;
-
-    while let Some(edge) = find_edge(&board) {
-        board[edge.0][edge.1] = Cell::Flooded;
-
-        if edge.0 as i32 - 1 >= 0 {
-            match board[edge.0 - 1][edge.1] {
-                Cell::Dry(v) if v != 9 => board[edge.0 - 1][edge.1] = Cell::Edge,
-                _ => (),
-            }
-        }
-        if edge.0 + 1 < board.len() {
-            match board[edge.0 + 1][edge.1] {
-                Cell::Dry(v) if v != 9 => board[edge.0 + 1][edge.1] = Cell::Edge,
-                _ => (),
-            }
-        }
-        if edge.1 as i32 - 1 >= 0 {
-            match board[edge.0][edge.1 - 1] {
-                Cell::Dry(v) if v != 9 => board[edge.0][edge.1 - 1] = Cell::Edge,
-                _ => (),
-            }
-        }
-        if edge.1 + 1 < input[0].len() {
-            match board[edge.0][edge.1 + 1] {
-                Cell::Dry(v) if v != 9 => board[edge.0][edge.1 + 1] = Cell::Edge,
-                _ => (),
-            }
-        }
-    }
-
-    board
-        .iter()
-        .map(|row| row.iter().filter(|&c| *c == Cell::Flooded).count())
-        .sum()
 }
 
 fn part_2(input: &Generated) -> usize {
     let minimas = get_minimas(input);
     let mut results = minimas
         .iter()
-        .map(|position| flood_fill(input, position))
+        .map(|position| flood_fill(&mut input.clone(), position))
         .collect::<Vec<usize>>();
     results.sort_unstable();
     results.iter().rev().take(3).product()
